@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UroVision | Cristalografía Urinaria</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300;0,400;0,600;0,700;1,800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-black: #000000;
+            --uro-amber: #f59e0b;
+            --uro-orange: #ea580c;
+            --card-zinc: #09090b;
+        }
+
+        body {
+            background-color: var(--bg-black);
+            color: #ffffff;
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+        }
+
+        .font-impact {
+            font-weight: 800;
+            font-style: italic;
+            text-transform: uppercase;
+        }
+
+        .tracking-ultra {
+            letter-spacing: 0.15em;
+        }
+
+        .glass-nav {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid #1a1a1a;
+        }
+
+        .crystal-card {
+            background: var(--card-zinc);
+            border-radius: 2.5rem;
+            border: 1px solid #18181b;
+            transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+            overflow: hidden;
+        }
+
+        .crystal-card:hover {
+            border-color: var(--uro-amber);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px -20px rgba(245, 158, 11, 0.2);
+        }
+
+        .card-image-container {
+            height: 180px;
+            position: relative;
+            background: #050505;
+        }
+
+        .card-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.6;
+            transition: opacity 0.3s;
+        }
+
+        .crystal-card:hover .card-image-container img {
+            opacity: 0.9;
+        }
+
+        .card-gradient {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, transparent 40%, var(--card-zinc));
+        }
+
+        .modal-container {
+            background: #000;
+            border-radius: 2.5rem;
+            border: 1px solid #27272a;
+            max-width: 1100px;
+            width: 95%;
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+        }
+
+        @media (max-width: 768px) {
+            .modal-container { flex-direction: column; height: 90vh; overflow-y: auto; }
+            .modal-image-side { height: 300px !important; width: 100% !important; }
+            .modal-info-side { width: 100% !important; }
+        }
+
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 4px;
+            background: var(--uro-amber);
+            box-shadow: 0 0 20px var(--uro-amber);
+            animation: scan 3s ease-in-out infinite;
+            z-index: 20;
+        }
+
+        @keyframes scan {
+            0%, 100% { top: 0%; }
+            50% { top: 100%; }
+        }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #000; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--uro-amber); }
+
+        .btn-action {
+            background: linear-gradient(135deg, var(--uro-amber), var(--uro-orange));
+            color: black;
+            border-radius: 1.5rem;
+            font-weight: 800;
+            transition: all 0.3s;
+        }
+
+        .btn-action:hover {
+            transform: scale(1.02);
+            filter: brightness(1.1);
+        }
+
+        .analyzing-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,0.7);
+            z-index: 25;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .analyzing-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid #27272a;
+            border-top-color: var(--uro-amber);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        #neuralFeedback.error {
+            background: #ef4444 !important;
+        }
+    </style>
+</head>
+<body class="custom-scroll">
+
+    <!-- Navigation -->
+    <nav class="glass-nav sticky top-0 z-[100] px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 bg-amber-500 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-900/40">
+                    <svg class="w-7 h-7 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+                </div>
+                <div>
+                    <h1 class="font-impact text-2xl tracking-ultra">UroVision</h1>
+                    <p class="text-[10px] text-amber-500 font-bold tracking-[0.4em] uppercase opacity-80">Cristalografía Urinaria</p>
+                </div>
+            </div>
+
+            <div class="relative w-full md:w-96 group">
+                <input type="text" id="crystalSearch" placeholder="BUSCAR POR NOMBRE O CATEGORÍA..." 
+                    class="w-full bg-zinc-900/50 border border-zinc-800 rounded-full py-3 px-12 text-xs font-bold tracking-widest outline-none focus:border-amber-500 transition-all">
+                <svg class="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600 group-focus-within:text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto px-6 py-12 space-y-20">
+        
+        <!-- Ultra-Precision Engine Section -->
+        <section class="grid lg:grid-cols-2 gap-12 items-center">
+            <div class="space-y-8">
+                <div>
+                    <span class="text-amber-500 font-impact text-sm tracking-ultra">Núcleo Neural</span>
+                    <h2 class="text-4xl md:text-6xl font-impact italic mt-2 leading-none">Ultra-Precision <br><span class="text-white">Recognition.</span></h2>
+                </div>
+                
+                <p class="text-zinc-500 text-sm leading-relaxed max-w-md font-medium">
+                    El motor de reconocimiento utiliza <span class="text-white">Detección de Gradiente de Píxel</span> y una <span class="text-white">Matriz de Correlación pH-Cristal</span> para asegurar identificaciones de grado clínico, separando cristales verdaderos de artefactos de contaminación.
+                </p>
+
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <div class="bg-zinc-900 p-4 rounded-3xl border border-zinc-800 flex-1">
+                        <label class="text-[9px] font-impact text-zinc-600 tracking-ultra block mb-2">PH MUESTRA</label>
+                        <input type="number" id="analysisPH" value="6.0" step="0.5" min="4.0" max="9.0" class="bg-transparent text-2xl font-impact italic text-amber-500 outline-none w-full">
+                    </div>
+                    <button onclick="document.getElementById('aiInput').click()" class="btn-action flex-[2] py-6 px-8 flex items-center justify-center gap-4 text-sm font-impact italic">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                        Analizar Micrografía
+                    </button>
+                    <input type="file" id="aiInput" class="hidden" accept="image/*" onchange="handleNeuralAnalysis(this)">
+                </div>
+            </div>
+
+            <div id="neuralContainer" class="aspect-square bg-zinc-950 rounded-[3rem] border-2 border-dashed border-zinc-900 flex items-center justify-center relative overflow-hidden group">
+                <div id="neuralPrompt" class="text-center space-y-4">
+                    <div class="w-20 h-20 bg-zinc-900 rounded-full flex items-center justify-center mx-auto border border-zinc-800 group-hover:border-amber-500/50 transition-all">
+                        <svg class="w-10 h-10 text-zinc-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path></svg>
+                    </div>
+                    <p class="text-xs font-impact tracking-ultra text-zinc-600 uppercase">En espera de procesamiento HD</p>
+                </div>
+                <img id="neuralPreview" class="hidden absolute inset-0 w-full h-full object-cover z-10">
+                <div id="scannerLine" class="hidden scan-line"></div>
+                
+                <div id="analyzingOverlay" class="hidden analyzing-overlay">
+                    <div class="analyzing-spinner"></div>
+                    <p class="text-xs font-impact tracking-ultra text-amber-500 uppercase">Procesando con IA...</p>
+                </div>
+
+                <div id="neuralFeedback" class="hidden absolute inset-x-6 bottom-6 z-30 bg-amber-500 p-6 rounded-[2rem] text-black shadow-2xl">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="text-[10px] font-impact tracking-ultra">Resultado Detección</span>
+                        <span id="accuracyVal" class="text-sm font-impact italic">99.8%</span>
+                    </div>
+                    <h3 id="detectedName" class="text-3xl font-impact italic leading-none mb-2">--</h3>
+                    <p id="detectedReason" class="text-[10px] font-bold uppercase opacity-80 leading-tight">--</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Crystal Library -->
+        <section class="space-y-12">
+            <div class="flex items-center justify-between px-2">
+                <h2 class="font-impact text-2xl tracking-ultra italic">Biblioteca de <span class="text-amber-500">Cristales</span></h2>
+                <div class="flex gap-2">
+                    <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                    <div class="w-3 h-3 rounded-full bg-zinc-800"></div>
+                </div>
+            </div>
+
+            <div id="mainGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal de Detalle (Split View) -->
+    <div id="modalOverlay" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-black/98 backdrop-blur-md" onclick="closeModal()"></div>
+        <div class="modal-container z-10 relative">
+            <div class="modal-image-side w-1/2 relative bg-zinc-950">
+                <img id="mImg" src="" class="w-full h-full object-cover opacity-80">
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent to-black/20"></div>
+                <div class="absolute bottom-10 left-10">
+                    <span id="mTag" class="bg-amber-600 text-black font-impact px-4 py-1 rounded-full text-[10px] tracking-ultra">FISIOLÓGICO</span>
+                </div>
+            </div>
+            
+            <div class="modal-info-side w-1/2 p-8 md:p-12 space-y-8 custom-scroll overflow-y-auto max-h-[90vh]">
+                <div class="flex justify-between items-start">
+                    <h2 id="mTitle" class="text-4xl md:text-5xl font-impact italic leading-none text-white">Nombre Cristal</h2>
+                    <button onclick="closeModal()" class="w-10 h-10 bg-zinc-900 rounded-full flex items-center justify-center hover:bg-amber-500 transition-colors group">
+                        <svg class="w-5 h-5 text-zinc-500 group-hover:text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="bg-zinc-900/50 p-5 rounded-3xl border border-zinc-800">
+                        <span class="text-[9px] font-impact text-amber-500 tracking-ultra block mb-1">BIRREFRINGENCIA</span>
+                        <p id="mBire" class="text-xs font-bold italic text-zinc-300">Fuertemente Positiva</p>
+                    </div>
+                    <div class="bg-zinc-900/50 p-5 rounded-3xl border border-zinc-800">
+                        <span class="text-[9px] font-impact text-amber-500 tracking-ultra block mb-1">PH DE ESTABILIDAD</span>
+                        <p id="mPh" class="text-xs font-bold italic text-zinc-300">Ácido (5.0 - 6.0)</p>
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div>
+                        <h4 class="text-[10px] font-impact text-zinc-500 tracking-ultra border-b border-zinc-900 pb-2 mb-4">MORFOLOGÍA & PROPIEDADES</h4>
+                        <p id="mDesc" class="text-sm text-zinc-400 leading-relaxed italic font-medium"></p>
+                    </div>
+                    <div>
+                        <h4 class="text-[10px] font-impact text-zinc-500 tracking-ultra border-b border-zinc-900 pb-2 mb-4">SIGNIFICADO CLÍNICO</h4>
+                        <p id="mClin" class="text-sm text-zinc-400 leading-relaxed"></p>
+                    </div>
+                    <div class="bg-amber-500/5 p-6 rounded-[2rem] border border-amber-500/20">
+                        <h4 class="text-[10px] font-impact text-amber-500 tracking-ultra mb-3">PROTOCOLO LABORATORIAL</h4>
+                        <p id="mProt" class="text-sm text-amber-100/70 leading-relaxed italic"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="mt-32 bg-zinc-900 pt-16 pb-12 border-t border-zinc-800">
+        <div class="max-w-7xl mx-auto px-6">
+
+            <!-- Grid: Descargo + Autor -->
+            <div class="grid md:grid-cols-2 gap-12 items-start mb-16">
+
+                <!-- Descargo de Responsabilidad -->
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3 text-amber-500 font-black text-xs uppercase tracking-[0.3em]">
+                        <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+                        </svg>
+                        Descargo de Responsabilidad
+                    </div>
+                    <div class="bg-zinc-950/50 p-6 rounded-[1.5rem] border border-zinc-800/50">
+                        <p class="text-[10px] text-zinc-500 leading-relaxed text-justify font-medium">
+                            UroVision es una herramienta de asistencia analítica basada en inteligencia artificial. Los resultados generados deben ser interpretados y validados exclusivamente por un profesional de laboratorio clínico debidamente capacitado. UroVision no sustituye, bajo ninguna circunstancia, el diagnóstico médico oficial ni los procesos de validación bioquímica establecidos. El uso de esta plataforma implica la aceptación expresa de la supervisión humana en cada resultado emitido. Las imágenes presentadas en esta herramienta provienen de aportaciones colaborativas, así como de repositorios educativos y científicos de acceso abierto.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Autoría y Desarrollo -->
+                <div class="flex flex-col md:items-end space-y-4">
+                    <div class="flex items-center gap-5 bg-zinc-950 p-6 rounded-[2rem] border border-zinc-800 shadow-xl w-full md:w-auto">
+                        <div class="bg-amber-500/10 p-3 rounded-2xl border border-amber-500/20 flex-shrink-0">
+                            <svg class="w-7 h-7 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                            </svg>
+                        </div>
+                        <div>
+                            <span class="text-zinc-600 text-[9px] font-black uppercase tracking-[0.3em] block mb-0.5">Autoría y Desarrollo</span>
+                            <span class="text-white font-black text-xl tracking-tight">QFB. Ibrahim Rodriguez Marroquin</span>
+                        </div>                           <div>       
+                            <span class="text-zinc-600 text-[7px] font-black uppercase tracking-[0.3em] block mb-0.5">Colaboración</span>
+                            <span class="text-white font-black text-xl tracking-tight">Pendiente</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cierre inferior -->
+            <div class="pt-8 border-t border-zinc-800/50 text-center flex flex-col items-center gap-3">
+                <div class="flex items-center gap-2 text-zinc-600 font-black text-[9px] uppercase tracking-[0.4em]">
+                    <svg class="w-3 h-3 text-amber-900/50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/>
+                    </svg>
+                    UroVision
+                </div>
+                <p class="text-[9px] text-zinc-700 font-bold uppercase tracking-widest">Cristalografía Urinaria</p>
+            </div>
+
+        </div>
+    </footer>
+
+    <script>
+        // ─── CONFIGURACIÓN GEMINI ───────────────────────────────────────────
+        const GEMINI_API_KEY = "AIzaSyAyEkOLZJVB5-BempFdgNos6bQs29kLV7w";
+        const GEMINI_MODEL   = "gemini-2.0-flash";
+        // ────────────────────────────────────────────────────────────────────
+
+        const CRYSTALS = [
+            // FISIOLÓGICOS ÁCIDOS
+            { id: 1, name: "Ácido úrico", cat: "Fisiológico", ph: "Ácido (5.0 - 5.5)", bire: "Fuertemente Positiva", morf: "Pleomórfico: Rombos planos, barriles, rosetas, placas cuadradas, formas de pesas, agujas (raro). Típicamente amarillo-marrón.", clinical: "Gota, nefropatía por uratos, estados febriles, lisis tumoral (quimioterapia). Frecuente tras ejercicio intenso.", protocol: "Confirmar con luz polarizada (multicolor).", img: "./img/1.jpg" },
+            { id: 2, name: "Uratos amorfos", cat: "Fisiológico", ph: "Ácido (5.5 - 6.5)", bire: "Nula", morf: "Gránulos finos, irregulares, color amarillento a marrón rojizo. Forman sedimento macroscópico rosado (sedimento de ladrillo).", clinical: "Común en orinas concentradas, deshidratación y fiebre.", protocol: "Se disuelven al calentar a 60°C o añadiendo NaOH.", img: "./img/2.jpg" },
+            { id: 3, name: "Urato de sodio", cat: "Fisiológico", ph: "Ácido", bire: "Fuerte", morf: "Agujas incoloras o amarillentas en racimos o haces.", clinical: "Fisiológico, sin relevancia clínica específica en el sedimento.", protocol: "Correlacionar con pH ácido; validar mediante birrefringencia fuerte en luz polarizada.", img: "./img/3.jpg" },
+            { id: 4, name: "Urato de potasio", cat: "Fisiológico", ph: "Ácido", bire: "Fuerte", morf: "Similar al urato de sodio, gránulos o agujas pequeñas.", clinical: "Fisiológico, asociado a la saturación normal de sales de urato.", protocol: "Correlacionar con pH ácido y ausencia de birrefringencia significativa.", img: "./img/4.jpg" },
+            { id: 5, name: "Urato de calcio", cat: "Fisiológico", ph: "Ácido", bire: "Fuerte", morf: "Gránulos amorfos o prismas pequeños.", clinical: "Fisiológico. Generalmente sin importancia diagnóstica.", protocol: "Correlacionar con pH ácido; diferenciar de oxalatos mediante solubilidad térmica.", img: "./img/5.jpg" },
+            { id: 6, name: "Oxalato de Calcio Mono", cat: "Fisiológico/Patológico", ph: "Ácido, Neutro", bire: "Fuerte", morf: "Ovoides, discos bicóncavos, formas de pesas o reloj de arena, rectangular, hexagonal, entre otras.", clinical: "A diferencia de la forma dihidratada (que suele ser fisiológica), esta variante tiene implicaciones patológicas agudas y severas: Intoxicación por Etilenglicol, hiperoxaluria Primaria, enfermedad renal aguda y nefrolitiasis.", protocol: "Correlacionar con cristaluria masiva en sospecha de intoxicación (Etilenglicol). Diferenciar de eritrocitos (no lisan con ácido acético).", img: "./img/6.jpg" },
+            { id: 7, name: "Oxalato de Calcio Di", cat: "Fisiológico", ph: "Ácido, Neutro", bire: "Débil", morf: "Octaedros incoloros brillantes con aspecto de 'sobre' (X central), formas estrelladas (cuando son muy pequeños) y prismas cortos.", clinical: "Dieta rica en oxalatos, Vitamina C. Riesgo de litiasis si son abundantes.", protocol: "Correlacionar con pH ácido/neutro e ingesta de alimentos ricos en oxalatos.", img: "./img/7.jpg" },
+            
+            // ALCALINOS
+            { id: 8, name: "FAM (Fosfato Triple)", cat: "Infeccioso", ph: "Alcalino (>7.0)", bire: "Positiva", morf: "Prismas prismáticos de 3 a 6 caras ('tapa de ataúd'), pero también puede adoptar otras morfologías incompletas como en forma de trapezoides, prismas alargados, y formas de hoja de helecho (en orinas muy alcalinas o viejas).", clinical: "Infecciones por bacterias urealíticas (e.j Proteus, Klebsiella). Cálculos coraliformes.", protocol: "Correlacionar con nitritos positivos y presencia de bacterias.", img: "./img/8.jpg" },
+            { id: 9, name: "Fosfatos amorfos", cat: "Fisiológico", ph: "Alcalino", bire: "No", morf: "Gránulos finos incoloros, similares a uratos amorfos pero en pH alcalino.", clinical: "Orina post-prandial o rica en lácteos. Común tras ingesta de dietas ricas en vegetales.", protocol: "Correlacionar con aspecto macroscópico blanquecino y disolución en ácido acético.", img: "./img/9.jpg" },
+            { id: 10, name: "Fosfato de calcio", cat: "Fisiológico", ph: "Alcalino", bire: "Variada", morf: "Prismas delgados, placas o rosetas estelares incoloras.", clinical: "Fisiológico, riesgo leve de Litiasis / Estasis. Puede preceder a la formación de cálculos de fosfato cálcico.", protocol: "Correlacionar con pH alcalino y posible presencia de FAM o fosfatos amorfos.", img: "./img/10.jpg" },
+            { id: 11, name: "Fosfato ácido de calcio (Brushita)", cat: "Fisiológico", ph: "Alcalino", bire: "Débil", morf: "Prismas irregulares o prismas que se asemejan a palas de molino, los cuales se pueden agrupar formando rosetas.", clinical: "Hipercalciuria. Relacionado con orinas alcalinas saturadas de calcio.", protocol: "Correlacionar con pH alcalino; validar mediante formación de rosetas o agujas.", img: "./img/11.jpg" },
+            { id: 12, name: "Carbonato de calcio", cat: "Fisiológico", ph: "Alcalino", bire: "Muy Fuerte", morf: "Esferas muy pequeñas, pesas diminutas o racimos de aspecto granular.", clinical: "Fisiológico.", protocol: "Correlacionar con pH alcalino y confirmar con efervescencia al añadir ácido.", img: "./img/12.jpg" },
+            { id: 13, name: "Biurato de amonio", cat: "Muestras Viejas", ph: "Alcalino", bire: "Fuerte", morf: "Esferas de color pardo a marrón con proyecciones largas e irregulares (manzana espinosa). También pueden verse esferas lisas.", clinical: "Raro en muestras frescas. Indica muestra mal conservada o retención urinaria severa.", protocol: "Correlacionar con pH alcalino e indicar sospecha de mala conservación de muestra.", img: "./img/13.jpg" },
+            
+            // PATOLÓGICOS RANGOS ÁCIDOS
+            { id: 14, name: "Cistina", cat: "Patológico", ph: "Ácido (<6.0)", bire: "Nula", morf: "Placas hexagonales incoloras, planas y perfectas. Pueden verse escalonadas o superpuestas.", clinical: "Cistinuria (error metabólico). Formación de cálculos renales severos.", protocol: "Hallazgo Crítico. Correlacionar con pH ácido y confirmar con prueba de cianuro-nitroprusiato.", img: "./img/14.jpg" },
+            { id: 15, name: "Tirosina", cat: "Patológico", ph: "Ácido", bire: "Fuerte", morf: "Agujas muy finas y alargadas, solitarias o formando rosetas.", clinical: "Necrosis hepática aguda, tirosinemia, enfermedad hepática severa.", protocol: "Correlacionar con bilirrubina positiva en tira y confirmar con pruebas de función hepática y leucina.", img: "./img/15.jpg" },
+            { id: 16, name: "Leucina", cat: "Patológico", ph: "Ácido", bire: "Fuerte (Cruz de Malta)", morf: "Forma poliédrica o esferas amarillas con estriaciones concéntricas y radiales muy marcadas, bajo luz polarizada se observa cruz de malta.", clinical: "Atrofia amarilla del hígado, cirrosis terminal, daño hepático agudo.", protocol: "Correlacionar con bilirrubina positiva y presencia de Cruz de Malta.", img: "./img/16.jpg" },
+            { id: 17, name: "Xantina", cat: "Raro", ph: "Ácido", bire: "No", morf: "Placas rRombos incoloros o placas pequeñas. Muy poco comunes. Similares al ácido úrico pero sin el color característico.", clinical: "Deficiencia de xantina oxidasa o tratamiento con alopurinol.", protocol: "Correlacionar con pH ácido; diferenciar de ácido úrico por solubilidad térmica.", img: "./img/17.jpg" },
+            { id: 18, name: "Colesterol", cat: "Patológico", ph: "Ácido/Neutro", bire: "Débil", morf: "Aparecen como placas cuadradas, con bordes bien definidos, transparentes, de diferentes tamaños y con frecuencia solapados.", clinical: "Síndrome nefrótico, quiluria (ruptura de vasos linfáticos), obstrucción linfática.", protocol: "Correlacionar con proteinuria masiva y cuerpos ovales grasos (síndrome nefrótico).", img: "./img/18.jpg" },
+            { id: 19, name: "Bilirrubina", cat: "Patológico", ph: "Ácido", bire: "No", morf: "Agujas finas, gránulos o cubos color oro/naranja.", clinical: "Bilirrubinuria por obstrucción biliar, daño hepático o ictericia.", protocol: "Correlacionar con bilirrubina positiva en tira y orina color ámbar/caoba.", img: "./img/19.jpg" },
+            { id: 20, name: "Hematoidina", cat: "Patológico", ph: "Ácido", bire: "No", morf: "Agujas u rombos dorados, similares a bilirrubina. Color dorado a rojo-pardo (derivado de la hemoglobina).", clinical: "Hemorragia tisular antigua, infarto renal.", protocol: "Diferenciar de bilirrubina, correlacionar con antecedentes de hemorragia renal o infarto.", img: "./img/20.jpg" },
+            { id: 21, name: "2,8-dihidroxiadenina", cat: "Metabólico", ph: "Ácido", bire: "Cruz de malta central", morf: "Pequeñas esferas marrón-rojizas con espículas centrales a menudo con un centro oscuro, y con una cruz de malta bajo luz polarizada.", clinical: "Deficiencia de APRT; causa nefropatía obstructiva y falla renal.", protocol: "Correlacionar con litiasis recurrente e insolubilidad en NaOH.", img: "./img/21.jpg" },
+            
+            // CRISTALES RAROS
+            { id: 22, name: "Fosfato de magnesio", cat: "Fisiológico", ph: "Alcalino", bire: "Débil", morf: "Láminas romboidales grandes o placas delgadas incoloros, con bordes bien definidos.", clinical: "Fisiológico. Poco frecuente, sin patología específica.", protocol: "Correlacionar con pH alcalino; validar mediante solubilidad en ácido acético.", img: "./img/22.jpg" },
+            { id: 23, name: "Fosfato de amonio", cat: "Infeccioso", ph: "Alcalino", bire: "Positiva", morf: "Cristales variables, generalmente prismáticos o en láminas.", clinical: "Alcalosis metabólica o infección por gérmenes ureolíticos.", protocol: "Correlacionar con pH alcalino y sospecha de infección por gérmenes ureolíticos.", img: "./img/23.jpg" },
+            { id: 24, name: "Urato amónico", cat: "Metabólico", ph: "Alcalino", bire: "Fuerte", morf: "Estructuras esferoidales densas, variante del biurato sin las espículas prominentes.", clinical: "Raro, similar al biurato; indica estasis urinaria y alcalinización bacteriana.", protocol: "Correlacionar con pH alcalino y sedimento rico en sales amorfas.", img: "./img/24.jpg" },
+            { id: 25, name: "Oxalato de sodio", cat: "Raro", ph: "Neutro", bire: "Fuerte", morf: "Prismas delgados o estructuras aciculares (en forma de aguja).", clinical: "Raro. Asociado a trastornos metabólicos agudos de sales de oxalato.", protocol: "Correlacionar con pH ácido; validar mediante insolubilidad en ácido acético.", img: "./img/25.jpg" },
+            { id: 26, name: "Oxalato de magnesio", cat: "Dietario", ph: "Neutro", bire: "No", morf: "Rombos o placas rectangulares.", clinical: "Ingesta alta de frutos secos. Raro, sin relevancia clínica documentada más allá de la sobresaturación.", protocol: "Correlacionar con pH neutro/ácido y análisis mineral del paciente.", img: "./img/26.jpg" },
+            { id: 27, name: "Sulfato de calcio", cat: "Raro", ph: "Ácido", bire: "Fuerte", morf: "Agujas largas y delgadas, a veces en racimos o prismas individuales.", clinical: "Fisiológico / Raro. Se observa en orinas con pH muy bajo.", protocol: "Correlacionar con pH muy ácido e insolubilidad en amoníaco.", img: "./img/27.jpg" },
+
+            // FÁRMACOS
+            { id: 28, name: "Sulfadiazina", cat: "Fármaco", ph: "Ácido", bire: "Fuerte", morf: "Se presenta clásicamente como haces de espigas de trigo o abanicos simétricos. También pueden verse como esferas densas con estriaciones radiales que parten de un centro oscuro.", clinical: "La presencia de estos cristales indica cristaluria inducida, con riesgo de falla renal aguda por obstrucción intratubular mecánica.", protocol: "Correlacionar con tratamiento antibiótico.", img: "./img/28.jpg" },
+            { id: 29, name: "Sulfametoxazol", cat: "Fármaco", ph: "Ácido", bire: "Fuerte", morf: "Tiende a formar estructuras más irregulares que la sulfadiazina. Se observan como placas densas, a veces con bordes deshilachados, o rosetas muy compactas de cristales laminares.", clinical: "La presencia de estos cristales indica cristaluria inducida, con riesgo de falla renal aguda por obstrucción intratubular mecánica.", protocol: "Correlacionar con pH ácido y disolución completa en acetona.", img: "./img/29.jpg" },
+            { id: 30, name: "Ampicilina", cat: "Fármaco", ph: "Ácido", bire: "Fuerte", morf: "Agujas largas, finas e incoloras. Su rasgo distintivo es que se agrupan en haces o paquetes después de que la orina se enfría o se almacena en refrigeración.", clinical: "La presencia de estos cristales indica cristaluria inducida, con riesgo de falla renal aguda por obstrucción intratubular mecánica.", protocol: "No confundir con tirosina. Correlacionar con dosis masivas IV y precipitación tras refrigerar la muestra.", img: "./img/30.jpg" },
+            { id: 31, name: "Amoxicilina", cat: "Fármaco", ph: "Ácido", bire: "Fuerte", morf: "Similar ampicilina, pero tiende a ser más desordenada. Se presenta como agujas agrupadas en haces densos que a menudo se cruzan entre sí formando una red o malla.", clinical: "La presencia de estos cristales indica cristaluria inducida, con riesgo de falla renal aguda por obstrucción intratubular mecánica.", protocol: "Correlacionar con tratamiento reciente y pH ácido.", img: "./img/31.jpg" },
+            { id: 32, name: "Aciclovir", cat: "Fármaco", ph: "Ácido", bire: "Fuerte", morf: "Agujas planas y delgadas o prismas alargados birrefringentes.", clinical: "La presencia de estos cristales indica cristaluria inducida, con riesgo de falla renal aguda por obstrucción intratubular mecánica.", protocol: "Correlacionar con tratamiento antiviral y birrefringencia extrema.", img: "./img/32.jpg" },
+            { id: 33, name: "Indinavir", cat: "Fármaco", ph: "Neutro", bire: "Fuerte", morf: "Altamente polimórfico. La forma más común son paquetes radiados de agujas (como un sol o un asterisco) y láminas rectangulares o rectángulos con extremos puntiagudos. Incoloros en luz clara, pero brillan intensamente en luz polarizada.", clinical: "La presencia de estos cristales indica cristaluria inducida, con riesgo de falla renal aguda por obstrucción intratubular mecánica.", protocol: "Correlacionar con pacientes VIH+ y pH ácido; validar con NaOH.", img: "./img/33.jpg" },
+
+            // ARTEFACTOS
+            { id: 34, name: "Almidón", cat: "Artefacto", ph: "N/A", bire: "Cruz de Malta", morf: "Se presenta como esferas u óvalos irregulares, a menudo con un centro deprimido o una hendidura que parece una Y, una X o una línea irregular. No tienen una forma geométrica cristalina perfecta, sino bordes suaves y redondeados. Bajo luz polarizada, muestran una Cruz de Malta negra perfecta y simétrica en el centro de la esfera.", clinical: "Su única importancia clínica es su identificación correcta para ser ignorados.", protocol: "Correlacionar con presencia de Cruz de Malta; descartar importancia clínica.", img: "./img/34.jpg" },
+            { id: 35, name: "Talco", cat: "Artefacto", ph: "N/A", bire: "Fuerte", morf: "Son partículas sólidas con formas altamente irregulares y angulosas. A diferencia de los cristales, no tienen una simetría repetitiva; cada partícula es diferente a la otra. Pueden parecer trozos de vidrio roto o láminas opacas.", clinical: "Su única importancia clínica es su identificación correcta para ser ignorados.", protocol: "Correlacionar con morfología irregular y falta de simetría cristalina.", img: "./img/35.jpg" },
+            { id: 36, name: "Fibras", cat: "Artefacto", ph: "N/A", bire: "Variada", morf: "Estructuras alargadas, tubulares o filamentosas. Las fibras sintéticas suelen ser lisas y constantes en su grosor, mientras que las de algodón pueden verse retorcidas o con un canal central (lumen).", clinical: "Su única importancia clínica es su identificación correcta para ser ignorados.", protocol: "Diferenciar de cilindros. Correlacionar con plano focal superior y presencia de lumen o torsión.", img: "./img/36.jpg" },
+            { id: 37, name: "Contam. lipídicos", cat: "Artefacto", ph: "N/A", bire: "Fuerte", morf: "Gotas con bordes oscuros muy definidos que flotan en diferentes planos focales.", clinical: "Su única importancia clínica es su identificación correcta para ser ignorados.", protocol: "Correlacionar con uso de lubricantes y tinción naranja con Sudán III.", img: "./img/37.jpg" }
+        ];
+
+        function renderGrid(filter = "") {
+            const grid = document.getElementById('mainGrid');
+            grid.innerHTML = "";
+            const filtered = CRYSTALS.filter(i => 
+                i.name.toLowerCase().includes(filter.toLowerCase()) || 
+                i.cat.toLowerCase().includes(filter.toLowerCase())
+            );
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "crystal-card group cursor-pointer";
+                card.onclick = () => openModal(item);
+                
+                const fallbackImg = "https://images.unsplash.com/photo-1579154261221-5a9e3362947e?auto=format&fit=crop&q=60&w=800";
+                
+                card.innerHTML = `
+                    <div class="card-image-container">
+                        <img src="${item.img || fallbackImg}" loading="lazy" alt="${item.name}">
+                        <div class="card-gradient"></div>
+                        <div class="absolute top-4 right-4 w-8 h-8 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 group-hover:border-amber-500 transition-all">
+                             <svg class="w-4 h-4 text-zinc-400 group-hover:text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                        </div>
+                    </div>
+                    <div class="p-6">
+                        <span class="text-[9px] font-impact text-amber-500 tracking-ultra mb-2 block">${item.cat}</span>
+                        <h3 class="text-xl font-impact italic mb-4 group-hover:text-amber-500 transition-colors">${item.name}</h3>
+                        <div class="flex items-center gap-3">
+                            <div class="w-1.5 h-1.5 rounded-full ${item.ph.includes('Ácido') ? 'bg-orange-500' : 'bg-blue-500'}"></div>
+                            <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">${item.ph}</span>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function openModal(item) {
+            const fallbackImg = "https://images.unsplash.com/photo-1579154261221-5a9e3362947e?auto=format&fit=crop&q=60&w=800";
+            document.getElementById('mTitle').innerText = item.name;
+            document.getElementById('mTag').innerText = item.cat.toUpperCase();
+            document.getElementById('mBire').innerText = item.bire;
+            document.getElementById('mPh').innerText = item.ph;
+            document.getElementById('mDesc').innerText = item.morf;
+            document.getElementById('mClin').innerText = item.clinical;
+            document.getElementById('mProt').innerText = item.protocol;
+            document.getElementById('mImg').src = item.img || fallbackImg;
+            
+            document.getElementById('modalOverlay').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('modalOverlay').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        function compressImageToBase64(file, maxDim = 1024, quality = 0.82) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = () => reject(new Error("No se pudo leer el archivo."));
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.onerror = () => reject(new Error("Imagen inválida o corrupta."));
+                    img.onload = () => {
+                        let { width, height } = img;
+                        if (width > maxDim || height > maxDim) {
+                            if (width > height) {
+                                height = Math.round((height / width) * maxDim);
+                                width = maxDim;
+                            } else {
+                                width = Math.round((width / height) * maxDim);
+                                height = maxDim;
+                            }
+                        }
+
+                        const canvas = document.createElement('canvas');
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, width, height);
+
+                        const enhanced = document.createElement('canvas');
+                        enhanced.width = width;
+                        enhanced.height = height;
+                        const ectx = enhanced.getContext('2d');
+                        ectx.filter = 'contrast(1.45) brightness(1.05) saturate(1.2)';
+                        ectx.drawImage(canvas, 0, 0);
+
+                        const imgData = ectx.getImageData(0, 0, width, height);
+                        const src = imgData.data;
+                        const out = new Uint8ClampedArray(src.length);
+                        const W = width, H = height;
+                        const strength = 0.38;
+
+                        for (let y = 1; y < H - 1; y++) {
+                            for (let x = 1; x < W - 1; x++) {
+                                const i = (y * W + x) * 4;
+                                for (let c = 0; c < 3; c++) {
+                                    const lap =
+                                        -src[((y-1)*W+(x-1))*4+c] - src[((y-1)*W+x)*4+c] - src[((y-1)*W+(x+1))*4+c]
+                                        -src[(y*W+(x-1))*4+c]     + 8*src[i+c]             - src[(y*W+(x+1))*4+c]
+                                        -src[((y+1)*W+(x-1))*4+c] - src[((y+1)*W+x)*4+c] - src[((y+1)*W+(x+1))*4+c];
+                                    out[i+c] = Math.min(255, Math.max(0, src[i+c] + strength * lap));
+                                }
+                                out[i+3] = src[i+3];
+                            }
+                        }
+                        for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+                            if (y === 0 || y === H-1 || x === 0 || x === W-1) {
+                                const i = (y*W+x)*4;
+                                out[i]=src[i]; out[i+1]=src[i+1]; out[i+2]=src[i+2]; out[i+3]=src[i+3];
+                            }
+                        }
+                        ectx.putImageData(new ImageData(out, width, height), 0, 0);
+
+                        const dataUrl = enhanced.toDataURL('image/jpeg', quality);
+                        const base64 = dataUrl.split(',')[1];
+                        resolve(base64);
+                    };
+                    img.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function buildPrompt(ph) {
+            const crystalList = CRYSTALS.map(c => c.name).join(', ');
+            return `Eres un sistema experto de cristalografía urinaria de grado clínico. Analiza esta imagen de microscopía de sedimento urinario y realiza una identificación precisa.
+
+Parámetro bioquímico contextual: pH de la muestra = ${ph}
+
+Catálogo de cristales conocidos (úsalos como referencia):
+${crystalList}
+
+INSTRUCCIONES DE ANÁLISIS:
+1. Examina la morfología (forma geométrica, bordes, transparencia, estriaciones, simetría).
+2. Evalúa el color y características ópticas visibles.
+3. Correlaciona con el pH proporcionado para filtrar opciones incompatibles.
+4. Distingue cristales de artefactos si los hay.
+
+Responde ÚNICAMENTE en el siguiente formato JSON exacto, sin texto adicional, sin markdown, sin explicaciones fuera del JSON:
+{
+  "cristal": "nombre exacto del cristal identificado",
+  "confianza": número entre 0 y 100,
+  "razon": "descripción técnica en máximo 15 palabras de los rasgos morfológicos identificados",
+  "categoria": "categoría (Fisiológico / Patológico / Infeccioso / Fármaco / Artefacto / Raro / Metabólico)",
+  "hallazgo_critico": true o false
+}`;
+        }
+
+        function setAnalyzingState(active) {
+            const overlay = document.getElementById('analyzingOverlay');
+            const scanner = document.getElementById('scannerLine');
+            if (active) {
+                overlay.classList.remove('hidden');
+                scanner.classList.remove('hidden');
+            } else {
+                overlay.classList.add('hidden');
+                scanner.classList.add('hidden');
+            }
+        }
+
+        function showFeedback(name, reason, confidence, isError = false) {
+            const feedback = document.getElementById('neuralFeedback');
+            feedback.classList.remove('hidden', 'error');
+            if (isError) feedback.classList.add('error');
+            document.getElementById('detectedName').innerText = name.toUpperCase();
+            document.getElementById('detectedReason').innerText = reason;
+            document.getElementById('accuracyVal').innerText = isError ? '—' : confidence.toFixed(1) + '%';
+        }
+
+        async function handleNeuralAnalysis(input) {
+            if (!input.files || !input.files[0]) return;
+
+            const file = input.files[0];
+            const ph = parseFloat(document.getElementById('analysisPH').value) || 6.0;
+
+            const previewEl  = document.getElementById('neuralPreview');
+            const promptEl   = document.getElementById('neuralPrompt');
+            const feedbackEl = document.getElementById('neuralFeedback');
+
+            const localUrl = URL.createObjectURL(file);
+            previewEl.src = localUrl;
+            previewEl.classList.remove('hidden');
+            promptEl.classList.add('hidden');
+            feedbackEl.classList.add('hidden');
+            setAnalyzingState(true);
+
+            try {
+                let base64Image;
+                try {
+                    base64Image = await compressImageToBase64(file, 1024, 0.82);
+                } catch (compressErr) {
+                    throw new Error("No se pudo procesar la imagen. Verifica que sea un archivo de imagen válido.");
+                }
+
+                // ── Llamada a Gemini API ──────────────────────────────────────
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
+
+                const response = await fetch(url, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        contents: [
+                            {
+                                parts: [
+                                    {
+                                        inline_data: {
+                                            mime_type: "image/jpeg",
+                                            data: base64Image
+                                        }
+                                    },
+                                    {
+                                        text: buildPrompt(ph)
+                                    }
+                                ]
+                            }
+                        ],
+                        generationConfig: {
+                            maxOutputTokens: 400,
+                            temperature: 0.2
+                        }
+                    })
+                });
+                // ─────────────────────────────────────────────────────────────
+
+                if (!response.ok) {
+                    const errData = await response.json().catch(() => ({}));
+                    const apiMsg = errData?.error?.message || `Error HTTP ${response.status}`;
+                    throw new Error(apiMsg);
+                }
+
+                const data = await response.json();
+
+                // Extraer texto de la respuesta Gemini
+                const rawText = data?.candidates?.[0]?.content?.parts
+                    ?.filter(p => p.text)
+                    ?.map(p => p.text)
+                    ?.join("")
+                    ?.trim() || "";
+
+                const cleanJson = rawText
+                    .replace(/```json\s*/gi, "")
+                    .replace(/```\s*/g, "")
+                    .trim();
+
+                let result;
+                try {
+                    result = JSON.parse(cleanJson);
+                } catch {
+                    throw new Error("La respuesta de la IA no tuvo el formato esperado. Intenta con otra imagen.");
+                }
+
+                const cristalName  = result.cristal    || "No identificado";
+                const confianza    = typeof result.confianza === "number" ? result.confianza : 0;
+                const razon        = result.razon       || "Sin detalle morfológico";
+                const hallazgoCrit = result.hallazgo_critico === true;
+
+                setAnalyzingState(false);
+                showFeedback(cristalName, razon, confianza, false);
+
+                const container = document.getElementById('neuralContainer');
+                if (hallazgoCrit) {
+                    container.style.borderColor = "#ef4444";
+                    container.style.boxShadow = "0 0 40px -10px rgba(239,68,68,0.5)";
+                } else {
+                    container.style.borderColor = "";
+                    container.style.boxShadow = "";
+                }
+
+            } catch (err) {
+                setAnalyzingState(false);
+                console.error("[UroVision] Error de análisis:", err);
+
+                let userMsg = err.message || "Error desconocido.";
+
+                if (userMsg.includes("Failed to fetch") || userMsg.includes("NetworkError") || userMsg.includes("fetch")) {
+                    userMsg = "Sin conexión a la API. Verifica tu red o la configuración de API key.";
+                } else if (userMsg.includes("400") || userMsg.includes("API key not valid") || userMsg.includes("API_KEY_INVALID")) {
+                    userMsg = "API key de Gemini inválida. Verifica la clave en la constante GEMINI_API_KEY.";
+                } else if (userMsg.includes("413") || userMsg.includes("too large")) {
+                    userMsg = "Imagen demasiado grande incluso tras compresión. Usa una captura de menor resolución.";
+                } else if (userMsg.includes("429") || userMsg.includes("quota") || userMsg.includes("RESOURCE_EXHAUSTED")) {
+                    userMsg = "Cuota de Gemini agotada. Intenta en unos momentos.";
+                } else if (userMsg.includes("503") || userMsg.includes("overloaded")) {
+                    userMsg = "Servicio temporalmente saturado. Intenta en unos segundos.";
+                }
+
+                showFeedback("Error de análisis", userMsg, 0, true);
+            }
+
+            input.value = "";
+        }
+
+        document.getElementById('crystalSearch').addEventListener('input', (e) => renderGrid(e.target.value));
+        renderGrid();
+    </script>
+</body>
+</html>
