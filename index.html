@@ -88,7 +88,7 @@
 
         @media (max-width: 768px) {
             .modal-container { flex-direction: column; height: 90vh; overflow-y: auto; }
-            .modal-image-side { height: 300px !important; width: 100% !important; }
+            .modal-image-side { height: 320px !important; width: 100% !important; }
             .modal-info-side { width: 100% !important; }
         }
 
@@ -246,18 +246,37 @@
         </section>
     </main>
 
-    <!-- Modal de Detalle (Split View) -->
+    <!-- Modal de Detalle (Split View con Carrusel de Imágenes) -->
     <div id="modalOverlay" class="fixed inset-0 z-[200] hidden flex items-center justify-center p-4">
         <div class="absolute inset-0 bg-black/98 backdrop-blur-md" onclick="closeModal()"></div>
         <div class="modal-container z-10 relative">
-            <div class="modal-image-side w-1/2 relative bg-zinc-950">
-                <img id="mImg" src="" class="w-full h-full object-cover opacity-80">
-                <div class="absolute inset-0 bg-gradient-to-r from-transparent to-black/20"></div>
-                <div class="absolute bottom-10 left-10">
-                    <span id="mTag" class="bg-amber-600 text-black font-impact px-4 py-1 rounded-full text-[10px] tracking-ultra">FISIOLÓGICO</span>
+            
+            <!-- Contenedor Lateral Izquierdo de Imagen / Carrusel -->
+            <div class="modal-image-side w-1/2 relative bg-zinc-950 flex items-center justify-center overflow-hidden group">
+                <!-- Visor de imagen principal -->
+                <img id="mImg" src="" class="w-full h-full object-cover opacity-80 transition-all duration-300">
+                <div class="absolute inset-0 bg-gradient-to-r from-transparent to-black/20 pointer-events-none"></div>
+                
+                <!-- Controles del Carrusel (Flechas de navegación) -->
+                <button id="mPrevBtn" onclick="prevImage(event)" class="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/75 hover:bg-amber-500 text-amber-500 hover:text-black border border-amber-500/30 flex items-center justify-center rounded-full transition-all shadow-lg backdrop-blur-sm z-30 select-none hidden">
+                    <span class="text-xl font-bold leading-none">❮</span>
+                </button>
+                <button id="mNextBtn" onclick="nextImage(event)" class="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 bg-black/75 hover:bg-amber-500 text-amber-500 hover:text-black border border-amber-500/30 flex items-center justify-center rounded-full transition-all shadow-lg backdrop-blur-sm z-30 select-none hidden">
+                    <span class="text-xl font-bold leading-none">❯</span>
+                </button>
+                
+                <!-- Indicador Analítico de Índice -->
+                <div id="mCounter" class="absolute top-4 right-4 bg-zinc-950/95 text-amber-500 border border-amber-500/30 px-3 py-1 rounded-full text-xs font-mono tracking-widest shadow-md z-30 hidden">
+                    1 / 1
+                </div>
+
+                <!-- Categoría del Cristal -->
+                <div class="absolute bottom-10 left-10 z-30">
+                    <span id="mTag" class="bg-amber-600 text-black font-impact px-4 py-1 rounded-full text-[10px] tracking-ultra shadow-lg">FISIOLÓGICO</span>
                 </div>
             </div>
             
+            <!-- Contenedor Lateral Derecho de Información -->
             <div class="modal-info-side w-1/2 p-8 md:p-12 space-y-8 custom-scroll overflow-y-auto max-h-[90vh]">
                 <div class="flex justify-between items-start">
                     <h2 id="mTitle" class="text-4xl md:text-5xl font-impact italic leading-none text-white">Nombre Cristal</h2>
@@ -330,7 +349,8 @@
                         <div>
                             <span class="text-zinc-600 text-[9px] font-black uppercase tracking-[0.3em] block mb-0.5">Autoría y Desarrollo</span>
                             <span class="text-white font-black text-xl tracking-tight">QFB. Ibrahim Rodriguez Marroquin</span>
-                        </div>                           <div>       
+                        </div>
+                        <div>       
                             <span class="text-zinc-600 text-[7px] font-black uppercase tracking-[0.3em] block mb-0.5">Colaboración</span>
                             <span class="text-white font-black text-xl tracking-tight">QFB. Eduardo Ramírez Flores</span>
                         </div>
@@ -359,9 +379,13 @@
         const GEMINI_MODEL   = "gemini-2.0-flash";
         // ────────────────────────────────────────────────────────────────────
 
+        // Variables de Estado del Carrusel del Modal
+        let activeCrystalImages = [];
+        let activeImageIndex = 0;
+
         const CRYSTALS = [
             // FISIOLÓGICOS ÁCIDOS
-            { id: 1, name: "Ácido úrico", cat: "Fisiológico", ph: "Ácido (4.5 - 5.5)", bire: "Fuertemente Positiva", morf: "Pleomórfico: Rombos planos, barriles, rosetas, placas cuadradas, formas de pesas, agujas (raro). Típicamente amarillo-marrón.", clinical: "Gota, nefropatía por uratos, estados febriles, lisis tumoral (quimioterapia). Frecuente tras ejercicio intenso.", protocol: "Confirmar con luz polarizada (multicolor).", img: "./img/1.jpg" },
+            { id: 1, name: "Ácido úrico", cat: "Fisiológico", ph: "Ácido (4.5 - 5.5)", bire: "Fuertemente Positiva", morf: "Pleomórfico: Rombos planos, barriles, rosetas, placas cuadradas, formas de pesas, agujas (raro). Típicamente amarillo-marrón.", clinical: "Gota, nefropatía por uratos, estados febriles, lisis tumoral (quimioterapia). Frecuente tras ejercicio intenso.", protocol: "Confirmar con luz polarizada (multicolor).", img: ["./img/1.jpg", "./img/1.1.jpg"] },
             { id: 2, name: "Uratos amorfos", cat: "Fisiológico", ph: "Ácido (5.5 - 6.5)", bire: "Nula", morf: "Gránulos finos, irregulares, color amarillento a marrón rojizo. Forman sedimento macroscópico rosado (sedimento de ladrillo).", clinical: "Con frecuencia hay en la orina sales de urato de sodio, potasio, magnesio y calcio. Común en orinas concentradas, deshidratación y fiebre.", protocol: "Se disuelven al calentar a 60°C o añadiendo NaOH.", img: "./img/2.jpg" },
             { id: 3, name: "Urato de sodio", cat: "Fisiológico", ph: "Ácido (5.5 - 6.5)", bire: "Fuerte", morf: "Agujas o varillas incoloras o amarillentas con extremos puntiagudos o romos, pueden aparecer solos o en pequeños grupos.", clinical: "Fisiológico, sin relevancia clínica específica en el sedimento.", protocol: "Correlacionar con pH ácido; validar mediante birrefringencia fuerte en luz polarizada.", img: "./img/3.jpg" },
             { id: 6, name: "Oxalato de Calcio Mono", cat: "Fisiológico/Patológico", ph: "Ácido/Neutro (5.2 - 6.4)", bire: "Fuerte", morf: "Ovoides, discos bicóncavos, formas de pesas o reloj de arena, rectangular, hexagonal, entre otras.", clinical: "A diferencia de la forma dihidratada (que suele ser fisiológica), esta variante tiene implicaciones patológicas agudas y severas: Intoxicación por Etilenglicol, hiperoxaluria Primaria, enfermedad renal aguda y nefrolitiasis.", protocol: "Correlacionar con cristaluria masiva en sospecha de intoxicación (Etilenglicol). Diferenciar de eritrocitos (no lisan con ácido acético).", img: "./img/6.jpg" },
@@ -416,9 +440,13 @@
                 
                 const fallbackImg = "https://images.unsplash.com/photo-1579154261221-5a9e3362947e?auto=format&fit=crop&q=60&w=800";
                 
+                // Extraemos la primera imagen para mostrarla en la cuadrícula de tarjetas
+                const cardImg = Array.isArray(item.img) ? item.img[0] : item.img;
+                const phValue = Array.isArray(item.ph) ? item.ph[0] : item.ph;
+                
                 card.innerHTML = `
                     <div class="card-image-container">
-                        <img src="${item.img || fallbackImg}" loading="lazy" alt="${item.name}">
+                        <img src="${cardImg || fallbackImg}" loading="lazy" alt="${item.name}">
                         <div class="card-gradient"></div>
                         <div class="absolute top-4 right-4 w-8 h-8 bg-black/50 backdrop-blur-md rounded-full flex items-center justify-center border border-white/10 group-hover:border-amber-500 transition-all">
                              <svg class="w-4 h-4 text-zinc-400 group-hover:text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
@@ -428,8 +456,8 @@
                         <span class="text-[9px] font-impact text-amber-500 tracking-ultra mb-2 block">${item.cat}</span>
                         <h3 class="text-xl font-impact italic mb-4 group-hover:text-amber-500 transition-colors">${item.name}</h3>
                         <div class="flex items-center gap-3">
-                            <div class="w-1.5 h-1.5 rounded-full ${item.ph.includes('Ácido') ? 'bg-orange-500' : 'bg-blue-500'}"></div>
-                            <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">${item.ph}</span>
+                            <div class="w-1.5 h-1.5 rounded-full ${phValue.includes('Ácido') ? 'bg-orange-500' : 'bg-blue-500'}"></div>
+                            <span class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">${phValue}</span>
                         </div>
                     </div>
                 `;
@@ -437,8 +465,12 @@
             });
         }
 
+        // Lógica para Abrir Modal y Preparar el Carrusel
         function openModal(item) {
-            const fallbackImg = "https://images.unsplash.com/photo-1579154261221-5a9e3362947e?auto=format&fit=crop&q=60&w=800";
+            // Asegurarnos de que el array de imágenes sea válido
+            activeCrystalImages = Array.isArray(item.img) ? item.img : (item.img ? [item.img] : []);
+            activeImageIndex = 0; // Reiniciar siempre a la primera imagen
+
             document.getElementById('mTitle').innerText = item.name;
             document.getElementById('mTag').innerText = item.cat.toUpperCase();
             document.getElementById('mBire').innerText = item.bire;
@@ -446,10 +478,56 @@
             document.getElementById('mDesc').innerText = item.morf;
             document.getElementById('mClin').innerText = item.clinical;
             document.getElementById('mProt').innerText = item.protocol;
-            document.getElementById('mImg').src = item.img || fallbackImg;
+            
+            // Actualizar la interfaz del carrusel de imágenes
+            updateCarouselUI();
             
             document.getElementById('modalOverlay').classList.remove('hidden');
             document.body.style.overflow = 'hidden';
+        }
+
+        // Función Auxiliar para refrescar la vista de carrusel en el DOM
+        function updateCarouselUI() {
+            const fallbackImg = "https://images.unsplash.com/photo-1579154261221-5a9e3362947e?auto=format&fit=crop&q=60&w=800";
+            const imgEl = document.getElementById('mImg');
+            
+            if (activeCrystalImages.length > 0) {
+                imgEl.src = activeCrystalImages[activeImageIndex] || fallbackImg;
+            } else {
+                imgEl.src = fallbackImg;
+            }
+
+            const prevBtn = document.getElementById('mPrevBtn');
+            const nextBtn = document.getElementById('mNextBtn');
+            const counterEl = document.getElementById('mCounter');
+
+            // Mostrar u ocultar controles dependiendo de la cantidad de imágenes
+            if (activeCrystalImages.length > 1) {
+                prevBtn.classList.remove('hidden');
+                nextBtn.classList.remove('hidden');
+                counterEl.classList.remove('hidden');
+                counterEl.innerText = `${activeImageIndex + 1} / ${activeCrystalImages.length}`;
+            } else {
+                prevBtn.classList.add('hidden');
+                nextBtn.classList.add('hidden');
+                counterEl.classList.add('hidden');
+            }
+        }
+
+        // Navegación hacia atrás en el carrusel
+        function prevImage(event) {
+            if (event) event.stopPropagation(); // Evita cerrar el modal
+            if (activeCrystalImages.length <= 1) return;
+            activeImageIndex = (activeImageIndex - 1 + activeCrystalImages.length) % activeCrystalImages.length;
+            updateCarouselUI();
+        }
+
+        // Navegación hacia adelante en el carrusel
+        function nextImage(event) {
+            if (event) event.stopPropagation(); // Evita cerrar el modal
+            if (activeCrystalImages.length <= 1) return;
+            activeImageIndex = (activeImageIndex + 1) % activeCrystalImages.length;
+            updateCarouselUI();
         }
 
         function closeModal() {
