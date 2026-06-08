@@ -375,8 +375,8 @@
 
     <script>
         // ─── CONFIGURACIÓN GEMINI ───────────────────────────────────────────
-        const GEMINI_API_KEY = "AIzaSyAyEkOLZJVB5-BempFdgNos6bQs29kLV7w";
-        const GEMINI_MODEL   = "gemini-2.0-flash";
+        const GEMINI_PROXY = "https://urovision.vercel.app/api/proxy";
+        const GEMINI_MODEL = "gemini-2.0-flash";
         // ────────────────────────────────────────────────────────────────────
 
         // Variables de Estado del Carrusel del Modal
@@ -676,33 +676,34 @@ Responde ÚNICAMENTE en el siguiente formato JSON exacto, sin texto adicional, s
                     throw new Error("No se pudo procesar la imagen. Verifica que sea un archivo de imagen válido.");
                 }
 
-                // ── Llamada a Gemini API ──────────────────────────────────────
-                const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${GEMINI_API_KEY}`;
-
-                const response = await fetch(url, {
+                // ── Llamada al Proxy Serverless (Vercel) ─────────────────────
+                const response = await fetch(GEMINI_PROXY, {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
-                        contents: [
-                            {
-                                parts: [
-                                    {
-                                        inline_data: {
-                                            mime_type: "image/jpeg",
-                                            data: base64Image
+                        model: GEMINI_MODEL,
+                        payload: {
+                            contents: [
+                                {
+                                    parts: [
+                                        {
+                                            inline_data: {
+                                                mime_type: "image/jpeg",
+                                                data: base64Image
+                                            }
+                                        },
+                                        {
+                                            text: buildPrompt(ph)
                                         }
-                                    },
-                                    {
-                                        text: buildPrompt(ph)
-                                    }
-                                ]
+                                    ]
+                                }
+                            ],
+                            generationConfig: {
+                                maxOutputTokens: 400,
+                                temperature: 0.2
                             }
-                        ],
-                        generationConfig: {
-                            maxOutputTokens: 400,
-                            temperature: 0.2
                         }
                     })
                 });
